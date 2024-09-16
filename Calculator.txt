@@ -1,0 +1,166 @@
+import java.awt.event.*;
+import java.awt.*;
+import javax.swing.*;
+import java.util.Stack;
+
+public class calculator extends JFrame implements ActionListener {
+    JButton b10, b11, b12, b13, b14, b15;
+    JButton[] b = new JButton[10];
+    JTextField res;
+    StringBuilder expression;
+
+    public calculator() {
+        expression = new StringBuilder();
+        
+        setLayout(new BorderLayout());
+        JPanel p = new JPanel();
+        p.setLayout(new GridLayout(4, 4));
+        
+        for (int i = 0; i <= 9; i++) {
+            b[i] = new JButton(i + "");
+            p.add(b[i]);
+            b[i].addActionListener(this);
+        }
+        
+        b10 = new JButton("+");
+        p.add(b10);
+        b10.addActionListener(this);
+
+        b11 = new JButton("-");
+        p.add(b11);
+        b11.addActionListener(this);
+
+        b12 = new JButton("*");
+        p.add(b12);
+        b12.addActionListener(this);
+
+        b13 = new JButton("/");
+        p.add(b13);
+        b13.addActionListener(this);
+
+        b14 = new JButton("=");
+        p.add(b14);
+        b14.addActionListener(this);
+
+        b15 = new JButton("C");
+        p.add(b15);
+        b15.addActionListener(this);
+
+        res = new JTextField(10);
+        add(p, BorderLayout.CENTER);
+        add(res, BorderLayout.NORTH);
+        setVisible(true);
+        setSize(200, 200);
+    }
+
+    public void actionPerformed(ActionEvent ae) {
+        JButton pb = (JButton) ae.getSource();
+        
+        if (pb == b15) { 
+            expression.setLength(0);
+            res.setText("");
+        } else if (pb == b14) { 
+            try {
+                double result = eval(expression.toString());
+                res.setText(Double.toString(result));
+                expression.setLength(0);
+                expression.append(result);
+            } catch (Exception e) {
+                res.setText("Error");
+                expression.setLength(0);
+            }
+        } else { 
+            for (int i = 0; i < 10; i++) {
+                if (pb == b[i]) {
+                    expression.append(i);
+                    res.setText(expression.toString());
+                    return;
+                }
+            }
+            if (pb == b10) {
+                expression.append("+");
+            } else if (pb == b11) {
+                expression.append("-");
+            } else if (pb == b12) { 
+                expression.append("*");
+            } else if (pb == b13) { 
+                expression.append("/");
+            }
+            res.setText(expression.toString());
+        }
+    }
+
+    private double eval(String expr) {
+        Stack<Double> numbers = new Stack<>();
+        Stack<Character> operations = new Stack<>();
+
+        for (int i = 0; i < expr.length(); i++) {
+            char c = expr.charAt(i);
+
+            if (Character.isDigit(c)) {
+                int num = 0;
+                while (Character.isDigit(c)) {
+                    num = num * 10 + (c - '0');
+                    i++;
+                    if (i < expr.length()) {
+                        c = expr.charAt(i);
+                    } else {
+                        break;
+                    }
+                }
+                i--;
+                numbers.push((double) num);
+            } else if (c == '+' || c == '-' || c == '*' || c == '/') {
+                while (!operations.isEmpty() && precedence(c) <= precedence(operations.peek())) {
+                    double output = performOperation(numbers, operations);
+                    numbers.push(output);
+                }
+                operations.push(c);
+            }
+        }
+
+        while (!operations.isEmpty()) {
+            double output = performOperation(numbers, operations);
+            numbers.push(output);
+        }
+
+        return numbers.pop();
+    }
+
+    private double performOperation(Stack<Double> numbers, Stack<Character> operations) {
+        double a = numbers.pop();
+        double b = numbers.pop();
+        char operation = operations.pop();
+        
+        switch (operation) {
+            case '+':
+                return b + a;
+            case '-':
+                return b - a;
+            case '*':
+                return b * a;
+            case '/':
+                if (a == 0) {
+                    throw new ArithmeticException("Cannot divide by zero");
+                }
+                return b / a;
+        }
+        return 0;
+    }
+
+    private int precedence(char c) {
+        switch (c) {
+            case '+':
+            case '-':
+                return 1;
+            case '*':
+            case '/':
+                return 2;
+        }
+        return -1;
+    }
+
+    public static void main(String[] arg) {
+        new calculator();
+    }
+}
